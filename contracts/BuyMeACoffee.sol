@@ -19,13 +19,15 @@ contract BuyMeACoffee {
 
     // TODO: creators to post exclusive content for tippers
     // TODO: enable periodic tips(like subscriptions) and reward tippers with exclusive content
+    // TODO: provide multiple tip packages
 
     // tip information
     struct Tip {
+        bytes32 tipId;
         string name;
         string message;
         address from;
-        address to;
+        address payable to;
         uint256 amount;
         uint256 createdAt;
     }
@@ -35,9 +37,17 @@ contract BuyMeACoffee {
         Tip tip;
     }
 
+    struct Withdrawal {
+        bytes32 id;
+        address payable withdrawnBy;
+        address payable withdrawFrom;
+        uint256 timestamp;
+    }
+
     // wallet of the system
     // a percentage to be credited once the creator makes a withdrawal
-    address payable serviceWallet;
+    address payable escrow;
+    address payable companyAccount;
     // map of creators
     mapping(bytes32 => CreatorAccount) public creatorAccounts;
     // list of all creator ids
@@ -52,6 +62,8 @@ contract BuyMeACoffee {
     - list of creator tips
     */
     CreatorTip[] creatorTips;
+
+    mapping(bytes32 => Withdrawal) public withdrawals;
 
     // add a new creator account
     function addCreatorAccount(string memory name, string memory about, string memory bannerURL) public returns(CreatorAccount memory) {
@@ -89,9 +101,104 @@ contract BuyMeACoffee {
     function getCreators() public view returns(CreatorAccount[] memory) {
         return creatorAccountList;
     }
+    
+    // give a tip to a creator
+    function giveTip(string memory name, string memory message, address payable to) public payable {
+        uint256 timestamp = block.timestamp;
+        bytes32 tipId = keccak256(
+            abi.encodePacked(
+                msg.sender,
+                address(this),
+                name,
+                message,
+                to,
+                timestamp
+            )
+        );
 
-    // TODO:
-    // function giveTip(string memory name, string memory message, address payable to, uint256 amount) public payable returns(Tip memory) {
+        // make payment of the tip to escrow
+        (bool success,) = escrow.call{value: msg.value}("");
+        require(success, "failed to make payment!");
+
+        // on successful payment, store tip details
+        Tip memory tip = Tip(
+            tipId,
+            name,
+            message,
+            msg.sender,
+            to,
+            msg.value,
+            timestamp
+        );
+        tips.push(tip);
+    }
+
+    // modifier for operations only performed by creator or system
+    modifier onlyCreatorOrSystem(address creatorAddress) {
+        require(msg.sender == creatorAddress || msg.sender == escrow);
+        _;
+    }
+    
+    // modifier for operations only performed by creator
+    modifier onlyCreator(address creatorAddress) {
+        require(msg.sender == creatorAddress);
+        _;
+    }
+
+    // lists all tips
+    function getCreatorTips() public view returns(Tip[] memory) {
+        return tips;
+    }
+
+    // lists a creators tip amount
+    function getCreatorTotalTips(address payable creatorAddress) public view onlyCreatorOrSystem(creatorAddress) returns(uint256) {
+        uint256 amount = 0;
+        for(uint i = 0; i < tips.length; i++) {
+            if(tips[i].to == creatorAddress) {
+                amount += tips[i].amount;
+            }
+        }
+
+        return amount;
+    }
+
+    // calculates the summary of withdrawal i.e. how much the creator will get and the company fee i.e. 10%
+    function getWithdrawalBreakdown(address payable creatorAddress, uint256 amount) public view onlyCreator(creatorAddress) returns(uint256 payOut, uint256 companyFee) {
+        // get the total of tips by creator
+        uint256 totalAmount = getCreatorTotalTips(creatorAddress);
+        // check if amount to withdraw is <= total
+        require(amount <= totalAmount, "cannot withdraw more than your total balance");
+        // return the amount to be paid and the company fee i.e. 10% of total
+        companyFee = amount * 10/100;
+        payOut = amount - companyFee;
+        return (payOut, companyFee);
+    }
+
+    function withdrawMyTips(address payable creatorAddress) public payable onlyCreator(creatorAddress) {
+        (uint256 payOut, uint256 companyFee) = getWithdrawalBreakdown(creatorAddress, msg.value);
+
+        // make payment to creator
+        (bool success,) = creatorAddress.call{value: payOut}("");
+        require(success, "failed to make withdrawal!");
+
+        // deposit service fee to company account
+        (success,) = companyAccount.call{value: companyFee}("");
+        require(success, "failed to send to company account!");
         
-    // }
+        uint256 timestamp = block.timestamp;
+        bytes32 tipId = keccak256(
+            abi.encodePacked(
+                escrow,
+                creatorAddress,
+                address(this),
+                timestamp
+            )
+        );
+        withdrawals[tipId] = Withdrawal(
+            tipId,
+            creatorAddress,
+            escrow,
+            timestamp
+        );
+    }
 }
