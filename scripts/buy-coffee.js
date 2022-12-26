@@ -11,11 +11,24 @@ async function printCreators(creators) {
 	}
 }
 
+async function printCreatorTips(tips) {
+	for (const tip of tips) {
+		console.log("====")
+		const name = tip.name;
+		const message = tip.message;
+		const from = tip.from;
+		const to = tip.to;
+		const amount = tip.amount;
+		// const timestamp = creator.createdAt;
+		console.log(`Name: ${name}, message: ${message}, to: ${to}, from: ${from}, amount: ${amount}`);
+	}
+}
+
 async function main() {
 	const BuyMeACoffee = await hre.ethers.getContractFactory("BuyMeACoffee");
 	const buyMeACoffee = await BuyMeACoffee.deploy();
 
-	const [creator1,] = await hre.ethers.getSigners();
+	const [creator1, subscriber1, subscriber2] = await hre.ethers.getSigners();
 
 	// Deploy the contract.
 	await buyMeACoffee.deployed();
@@ -32,6 +45,14 @@ async function main() {
 	console.log("==List Creators==")
 	const creators = await buyMeACoffee.getCreators();
 	printCreators(creators);
+
+	// give tip to creator
+	const tip = {value: hre.ethers.utils.parseEther("1")};
+	await buyMeACoffee.connect(subscriber1).giveTip("John Doe", "Awesome content!", creator1.address, tip);
+	await buyMeACoffee.connect(subscriber2).giveTip("Jane Doe", "Really Awesome content!", creator1.address, tip);
+
+	const tips = await buyMeACoffee.getCreatorTips();
+	printCreatorTips(tips);
 }
 
 main()
