@@ -2,6 +2,14 @@
 pragma solidity ^0.8.9;
 
 contract BuyMeACoffee {
+    // wallet of the system
+    // a percentage to be credited once the creator makes a withdrawal
+    address payable escrow;
+    address payable companyAccount;
+    constructor (address payable _escrow, address payable _companyAccount) {
+        escrow = _escrow;
+        companyAccount = _companyAccount;
+    }
     /**
     improvements:-
         - Tips are credited to an escrow account.
@@ -44,10 +52,6 @@ contract BuyMeACoffee {
         uint256 timestamp;
     }
 
-    // wallet of the system
-    // a percentage to be credited once the creator makes a withdrawal
-    address payable escrow;
-    address payable companyAccount;
     // map of creators
     mapping(bytes32 => CreatorAccount) public creatorAccounts;
     // list of all creator ids
