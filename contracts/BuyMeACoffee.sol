@@ -137,8 +137,13 @@ contract BuyMeACoffee {
         tips.push(tip);
     }
 
+    modifier onlyCompany() {
+        require(msg.sender == companyAccount);
+        _;
+    }
+
     // modifier for operations only performed by creator or system
-    modifier onlyCreatorOrSystem(address creatorAddress) {
+    modifier onlyCreatorOrCompany(address creatorAddress) {
         require(msg.sender == creatorAddress || msg.sender == escrow);
         _;
     }
@@ -155,7 +160,7 @@ contract BuyMeACoffee {
     }
 
     // lists a creators tip amount
-    function getCreatorTotalTips(address payable creatorAddress) public view onlyCreatorOrSystem(creatorAddress) returns(uint256) {
+    function getCreatorTotalTips(address payable creatorAddress) public view onlyCreatorOrCompany(creatorAddress) returns(uint256) {
         uint256 amount = 0;
         for(uint i = 0; i < tips.length; i++) {
             if(tips[i].to == creatorAddress) {
@@ -204,5 +209,13 @@ contract BuyMeACoffee {
             escrow,
             timestamp
         );
+    }
+
+    function getEscrowBalance() public onlyCompany view returns (uint256) {
+        return escrow.balance;
+    }
+
+    function getCreatorBalance(address payable addr) public onlyCreator(addr) view returns (uint256) {
+        return addr.balance;
     }
 }
