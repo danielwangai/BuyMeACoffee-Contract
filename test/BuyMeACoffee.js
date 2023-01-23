@@ -59,4 +59,32 @@ describe("BuyMeACoffee", async () => {
             expect(creatorList[0].walletAddress).to.be.equal(creator1.address);
         })
     })
+
+    describe("Tips", async () => {
+        const tip = tokens(5);
+        beforeEach(async () => {
+            const subscriberName = "Jane Doe";
+            const message = "Great content!";
+            const transaction = await buyMeACoffee.connect(subscriber1).giveTip(
+                subscriberName, message, creator1.address, { value: tip }
+            );
+            await transaction.wait();
+        })
+
+        it("calculates total value of tips for a creator", async () => {
+            let totalTips = await buyMeACoffee.connect(creator1).getCreatorTotalTips(creator1.address);
+            expect(tip).to.be.equal(totalTips);
+
+            // add one more tip
+            const tip2 = tokens(7);
+            const expectedTipValue = tokens(12);
+            const transaction = await buyMeACoffee.connect(subscriber2).giveTip(
+                "Subscriber Two", "Awesome content!", creator1.address, { value: tip2 }
+            );
+            await transaction.wait();
+
+            totalTips = await buyMeACoffee.connect(creator1).getCreatorTotalTips(creator1.address);
+            expect(expectedTipValue).to.be.equal(totalTips);
+        })
+    })
 })
