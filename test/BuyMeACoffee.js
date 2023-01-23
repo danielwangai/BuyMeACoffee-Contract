@@ -7,6 +7,7 @@ const tokens = (n) => {
 
 describe("BuyMeACoffee", async () => {
     let creator1, creator2, subscriber1, subscriber2, companyAccount, escrow;
+    let creator1Id;
     let buyMeACoffee;
     beforeEach(async () => {
         // setup accounts
@@ -19,11 +20,17 @@ describe("BuyMeACoffee", async () => {
             companyAccount.address
         );
 
+        await buyMeACoffee.deployed();
+
         const name = "John Doe";
         const about = "All about fun";
         const bannerUrl = "http://localhost:3000/image.png";
         const transaction = await buyMeACoffee.connect(creator1).addCreatorAccount(name, about, bannerUrl);
         await transaction.wait()
+
+        // get creators
+        const creators = await buyMeACoffee.getCreators();
+        creator1Id = creators[0].id;
     })
 
     describe("Creator Accounts", async () => {
@@ -31,11 +38,14 @@ describe("BuyMeACoffee", async () => {
             const creatorListBefore = await buyMeACoffee.getCreators();
             const name = "John Doe 1";
             const about = "The Crypto Channel";
-            const bannerUrl = "http://localhost:3000/image1.png";
-            const transaction = await buyMeACoffee.connect(creator1).addCreatorAccount(name, about, bannerUrl);
-            await transaction.wait()
+            const bannerURL = "http://localhost:3000/image1.png";
+            const transaction = await buyMeACoffee.connect(creator1).addCreatorAccount(name, about, bannerURL);
+            await transaction.wait();
             const creatorListAfter = await buyMeACoffee.getCreators();
             expect(creatorListAfter.length - creatorListBefore.length).to.be.equal(1);
+            expect(creatorListAfter[1].name).to.be.equal(name);
+            expect(creatorListAfter[1].about).to.be.equal(about);
+            expect(creatorListAfter[1].bannerURL).to.be.equal(bannerURL);
         })
     })
 

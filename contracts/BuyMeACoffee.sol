@@ -155,7 +155,7 @@ contract BuyMeACoffee {
     }
 
     // lists all tips
-    function getCreatorTips() public view returns(Tip[] memory) {
+    function getAllTips() public view returns(Tip[] memory) {
         return tips;
     }
 
