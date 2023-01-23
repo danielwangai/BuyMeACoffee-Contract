@@ -87,4 +87,37 @@ describe("BuyMeACoffee", async () => {
             expect(expectedTipValue).to.be.equal(totalTips);
         })
     })
+
+    describe("Withdrawal", async () => {
+        const tip = tokens(5);
+        beforeEach(async () => {
+            const subscriberName = "Jane Doe";
+            const message = "Great content!";
+            let transaction = await buyMeACoffee.connect(subscriber1).giveTip(
+                subscriberName, message, creator1.address, { value: tip }
+            );
+            await transaction.wait();
+
+            // tip 2
+            const subscriberName2 = "Jane Doe";
+            const message2 = "Great content!";
+            transaction = await buyMeACoffee.connect(subscriber2).giveTip(
+                subscriberName2, message2, creator1.address, { value: tip }
+            );
+            await transaction.wait();
+        })
+
+        it("calculates withdrawal breakdown", async () => {
+            const expectedTotalTips = tokens(10);
+            let totalTips = await buyMeACoffee.connect(creator1).getCreatorTotalTips(creator1.address);
+            expect(expectedTotalTips).to.be.equal(totalTips);
+            const [payOut, companyFee] = await buyMeACoffee.connect(creator1).getWithdrawalBreakdown(creator1.address, tokens(10));
+
+            const expectedPayOut = tokens(9);
+            const expectedCompanyFee = tokens(1);
+
+            expect(expectedPayOut).to.be.equal(payOut);
+            expect(expectedCompanyFee).to.be.equal(companyFee);
+        })
+    })
 })
