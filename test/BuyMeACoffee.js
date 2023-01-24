@@ -6,19 +6,16 @@ const tokens = (n) => {
 }
 
 describe("BuyMeACoffee", async () => {
-    let creator1, creator2, subscriber1, subscriber2, companyAccount, escrow;
+    let creator1, creator2, subscriber1, subscriber2, companyAccount;
     let creator1Id;
     let buyMeACoffee;
     beforeEach(async () => {
         // setup accounts
-        [creator1, creator2, subscriber1, subscriber2, companyAccount, escrow] = await ethers.getSigners();
+        [creator1, creator2, subscriber1, subscriber2, companyAccount] = await ethers.getSigners();
 
         // deploy contract
         const BuyMeACoffee = await ethers.getContractFactory("BuyMeACoffee");
-        buyMeACoffee = await BuyMeACoffee.deploy(
-            escrow.address,
-            companyAccount.address
-        );
+        buyMeACoffee = await BuyMeACoffee.deploy(companyAccount.address);
 
         await buyMeACoffee.deployed();
 
@@ -118,6 +115,24 @@ describe("BuyMeACoffee", async () => {
 
             expect(expectedPayOut).to.be.equal(payOut);
             expect(expectedCompanyFee).to.be.equal(companyFee);
+        })
+
+        it("withdraws creator tips", async () => {
+            // before withdrawal
+            const creatorBalanceBefore = await buyMeACoffee.connect(creator1).getCreatorBalance(creator1.address);
+            const companyBalanceBefore = await buyMeACoffee.connect(companyAccount).getCreatorBalance(companyAccount.address);
+            const escrowBalanceBefore = await buyMeACoffee.connect(companyAccount).getEscrowBalance();
+
+            // withdraw
+            await buyMeACoffee.connect(creator1).withdrawMyTips(creator1.address, tokens(10));
+            const creatorBalanceAfter = await buyMeACoffee.connect(creator1).getCreatorBalance(creator1.address);
+            const companyBalanceAfter = await buyMeACoffee.connect(companyAccount).getCreatorBalance(companyAccount.address);
+            const escrowBalanceAfter = await buyMeACoffee.connect(companyAccount).getEscrowBalance();
+
+            expect(companyBalanceAfter).to.be.greaterThan(companyBalanceBefore);
+            expect(creatorBalanceAfter).to.be.greaterThan(creatorBalanceBefore);
+            expect(escrowBalanceBefore).to.be.greaterThan(escrowBalanceAfter);
+            expect(escrowBalanceAfter).to.be.equal(tokens(0));
         })
     })
 })
