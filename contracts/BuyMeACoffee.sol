@@ -4,10 +4,10 @@ pragma solidity ^0.8.9;
 contract BuyMeACoffee {
     // wallet of the system
     // a percentage to be credited once the creator makes a withdrawal
-    address payable escrow;
+//    address payable escrow;
     address payable companyAccount;
-    constructor (address payable _escrow, address payable _companyAccount) {
-        escrow = _escrow;
+    constructor (address payable _companyAccount) {
+//        escrow = _escrow;
         companyAccount = _companyAccount;
     }
     /**
@@ -48,7 +48,7 @@ contract BuyMeACoffee {
     struct Withdrawal {
         bytes32 id;
         address payable withdrawnBy;
-        address payable withdrawFrom;
+        address withdrawFrom;
         uint256 timestamp;
     }
 
@@ -91,7 +91,7 @@ contract BuyMeACoffee {
             bannerURL,
             timestamp
         );
-        
+
         // add creator account to the creator accounts map
         creatorAccountList.push(creatorAccount);
 
@@ -120,11 +120,6 @@ contract BuyMeACoffee {
             )
         );
 
-        // make payment of the tip to escrow
-        (bool success,) = escrow.call{value: msg.value}("");
-        require(success, "failed to make payment!");
-
-        // on successful payment, store tip details
         Tip memory tip = Tip(
             tipId,
             name,
@@ -144,7 +139,7 @@ contract BuyMeACoffee {
 
     // modifier for operations only performed by creator or system
     modifier onlyCreatorOrCompany(address creatorAddress) {
-        require(msg.sender == creatorAddress || msg.sender == escrow);
+        require(msg.sender == creatorAddress || msg.sender == companyAccount);
         _;
     }
     
@@ -171,7 +166,8 @@ contract BuyMeACoffee {
         return amount;
     }
 
-    // calculates the summary of withdrawal i.e. how much the creator will get and the company fee i.e. 10%
+    // calculates the summary of withdrawal
+    // returns (how much the creator will get), (company/convenience fee i.e. 10%)
     function getWithdrawalBreakdown(address payable creatorAddress, uint256 amount) public view onlyCreator(creatorAddress) returns(uint256 payOut, uint256 companyFee) {
         // get the total of tips by creator
         uint256 totalAmount = getCreatorTotalTips(creatorAddress);
@@ -183,8 +179,8 @@ contract BuyMeACoffee {
         return (payOut, companyFee);
     }
 
-    function withdrawMyTips(address payable creatorAddress) public payable onlyCreator(creatorAddress) {
-        (uint256 payOut, uint256 companyFee) = getWithdrawalBreakdown(creatorAddress, msg.value);
+    function withdrawMyTips(address payable creatorAddress, uint256 amount) public payable onlyCreator(creatorAddress) {
+        (uint256 payOut, uint256 companyFee) = getWithdrawalBreakdown(creatorAddress, amount);
 
         // make payment to creator
         (bool success,) = creatorAddress.call{value: payOut}("");
@@ -193,26 +189,25 @@ contract BuyMeACoffee {
         // deposit service fee to company account
         (success,) = companyAccount.call{value: companyFee}("");
         require(success, "failed to send to company account!");
-        
+
         uint256 timestamp = block.timestamp;
-        bytes32 tipId = keccak256(
+        bytes32 withdrawalId = keccak256(
             abi.encodePacked(
-                escrow,
                 creatorAddress,
                 address(this),
                 timestamp
             )
         );
-        withdrawals[tipId] = Withdrawal(
-            tipId,
+        withdrawals[withdrawalId] = Withdrawal(
+            withdrawalId,
             creatorAddress,
-            escrow,
+            address(this),
             timestamp
         );
     }
 
     function getEscrowBalance() public onlyCompany view returns (uint256) {
-        return escrow.balance;
+        return address(this).balance;
     }
 
     function getCreatorBalance(address payable addr) public onlyCreator(addr) view returns (uint256) {
