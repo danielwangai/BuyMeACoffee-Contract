@@ -25,10 +25,10 @@ async function printCreatorTips(tips) {
 }
 
 async function main() {
+	const [creator1, subscriber1, subscriber2, escrow, companyAddress] = await hre.ethers.getSigners();
 	const BuyMeACoffee = await hre.ethers.getContractFactory("BuyMeACoffee");
-	const buyMeACoffee = await BuyMeACoffee.deploy();
+	const buyMeACoffee = await BuyMeACoffee.deploy(escrow.address, companyAddress.address);
 
-	const [creator1, subscriber1, subscriber2] = await hre.ethers.getSigners();
 
 	// Deploy the contract.
 	await buyMeACoffee.deployed();
@@ -51,7 +51,7 @@ async function main() {
 	await buyMeACoffee.connect(subscriber1).giveTip("John Doe", "Awesome content!", creator1.address, tip);
 	await buyMeACoffee.connect(subscriber2).giveTip("Jane Doe", "Really Awesome content!", creator1.address, tip);
 
-	const tips = await buyMeACoffee.getCreatorTips();
+	const tips = await buyMeACoffee.getAllTips();
 	printCreatorTips(tips);
 }
 

@@ -13,8 +13,12 @@
     "hardhat": "^2.12.4"
   },
   "dependencies": {
+    "babel-loader": "^9.1.2",
     "chai": "^4.3.7",
+    "css-loader": "^6.7.3",
     "ethers": "^5.7.2",
-    "mocha": "^10.2.0"
+    "mocha": "^10.2.0",
+    "style-loader": "^3.3.1",
+    "url-loader": "^4.1.1"
   }
 }
