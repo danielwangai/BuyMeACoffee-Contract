@@ -1,0 +1,37 @@
+.container {
+    display: flex;
+    justify-content: flex-start;
+    flex-direction: row;
+}
+
+.creator-detail {
+    display: flex;
+    justify-content: flex-start;
+    flex-direction: column;
+    margin-left: 1rem;
+}
+
+.creator-top-section {
+    display: flex;
+    justify-content: flex-start;
+    flex-direction: column;
+}
+
+.banner-image {
+    width: 40rem;
+    height: 20rem;
+}
+
+.description-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-top: 2rem;
+}
+
+.name-and-subscribe {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 2rem;
+}

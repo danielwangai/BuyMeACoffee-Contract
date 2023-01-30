@@ -9,6 +9,8 @@ import Form from 'react-bootstrap/Form';
 import Badge from 'react-bootstrap/Badge';
 import ListGroup from 'react-bootstrap/ListGroup';
 import {Link} from "react-router-dom";
+import CreatorDetail from "./components/CreatorDetail";
+import "./App.css";
 
 function Home() {
     // Contract Address & ABI
@@ -21,6 +23,7 @@ function Home() {
     const [name, setName] = useState("");
     const [about, setAbout] = useState("");
     const [bannerURL, setBannerURL] = useState("");
+    const [creatorDetail, setCreatorDetail] = useState(null);
 
     const handleOpenSignUp = () => setSignupModal(true);
     const handleCloseSignUp = () => setSignupModal(false);
@@ -89,6 +92,11 @@ function Home() {
         }
     }
 
+    const handleConnectWallet = async () => {
+        await connectWallet();
+        await getCreators();
+    }
+
     const getCreators = async () => {
         try {
             const {ethereum} = window;
@@ -110,6 +118,10 @@ function Home() {
         }
     }
 
+    const handleSetCreatorDetail = async(creator) => {
+        setCreatorDetail(creator);
+    }
+
     const getCreatorByAddress = async (address) => {
         console.log(`Creators: ${creators}, address: ${address}`);
         return creators.filter(creator => creator.walletAddress === address);
@@ -126,7 +138,8 @@ function Home() {
                     <p>{currentAccount}</p>
                 ) : (
                     <div>
-                        <Button variant="primary" onClick={handleOpenSignUp}>Signup</Button>
+                        <Button variant="primary" onClick={handleOpenSignUp}>Sign Up</Button>
+                        <Button variant="outline-primary" onClick={handleConnectWallet}>Connect Wallet</Button>
                             <Modal show={isSignupModalOpen} onHide={handleCloseSignUp}>
                                 <Modal.Header closeButton>
                                     <Modal.Title>Sign Up</Modal.Title>
@@ -171,28 +184,37 @@ function Home() {
             {/*list content creators*/}
             <div>
                 <h3>Content Creators</h3>
-                <ListGroup as="ol" numbered>
-                    {currentAccount && (creators.map((creator, id) => {
-                        return (
-                            <ListGroup.Item
-                                as="li"
-                                className="d-flex justify-content-between align-items-start"
-                                key={id}
-                            >
-                                <div className="ms-2 me-auto">
-                                    <div className="fw-bold">
-                                        <Link to={`/creator/${creator.id}`}>{creator.name}</Link>
+                <div className="container">
+                    <div>
+                        <ListGroup as="ol" numbered>
+                            {currentAccount && (creators.map((creator, id) => {
+                                return (
+                                    <div>
+                                        <ListGroup.Item
+                                            as="li"
+                                            className="d-flex justify-content-between align-items-start"
+                                            key={id}
+                                        >
+                                            <div className="ms-2 me-auto">
+                                                <div className="fw-bold">
+                                                    <a href="#" onClick={() => handleSetCreatorDetail(creator)}>{creator.name}</a>
+                                                </div>
+                                                {creator.about}
+                                            </div>
+                                            <Badge bg="primary" pill>
+                                                14
+                                            </Badge> Subscribers
+                                        {/*<img src={creator.bannerURL} />*/}
+                                        </ListGroup.Item>
                                     </div>
-                                    {creator.about}
-                                </div>
-                                <Badge bg="primary" pill>
-                                    14
-                                </Badge> Subscribers
-                            {/*<img src={creator.bannerURL} />*/}
-                            </ListGroup.Item>
-                    )
-                }))}
-                </ListGroup>
+                            )
+                        }))}
+                        </ListGroup>
+                    </div>
+                    <div>
+                        {creatorDetail && <CreatorDetail creatorDetail={creatorDetail}/>}
+                    </div>
+                </div>
             </div>
         </div>
     );
